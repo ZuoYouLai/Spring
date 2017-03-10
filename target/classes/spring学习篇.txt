@@ -1,0 +1,151 @@
+
+IOC:控制反转
+	1.将设计好的对象交给容器控制,而不是传统的在你对象内部直接控制,创建和查找依赖对象的控制权交给容器
+	[容器创建对象并注入依赖]
+	2.不是一种技术,是一种思想,松耦合,方便进行测试
+
+DI:依赖注入	
+DI与IOC:
+	1.IOC具有依赖注入功能的容器,容器动态的将某个依赖关系注入到组件之中,并非带来更多的功能，提升重用的频率
+	2.同一个概念不一样角度的描述，控制反转控制对象一个层面，很难想到谁来维护对象的关系。依赖注入,明确描述了被注入对象依赖IOC容器配置依赖对象
+	●谁依赖于谁：当然是应用程序依赖于IoC容器；
+	●为什么需要依赖：应用程序需要IoC容器来提供对象需要的外部资源；
+	●谁注入谁：很明显是IoC容器注入应用程序某个对象，应用程序依赖的对象；
+	●注入了什么：就是注入某个对象所需要的外部资源（包括对象、资源、常量数据）。
+
+	
+BeanFactory:提供了IOC容器最基本的功能,可以从classpath或文件系统等获取资源
+			而ApplicationContext则增加更多企业级功能支持,ApplicationContex完全继承BeanFactory
+
+Bean的配置:
+	IOC目的:管理bean,这些Bean将根据配置文件进行创建,而Bean定义在容器内部由BeanDefinition对象表示,该定义要包含以下信息:
+	●全限定类名（FQN）：用于定义Bean的实现类;
+	●Bean行为定义：这些定义了Bean在容器中的行为；包括作用域（单例、原型创建）、是否惰性初始化及生命周期等；
+	●Bean创建方式定义：说明是通过构造器还是工厂方法创建Bean；
+	●Bean之间关系定义：即对其他bean的引用，也就是依赖关系定义，这些引用bean也可以称之为同事bean 或依赖bean，也就是依赖注入。
+	Bean定义只有“全限定类名”在当使用构造器或静态工厂方法进行实例化bean时是必须的，其他都是可选的定义。难道Spring只能通过配置方式来创建Bean吗？
+	回答当然不是，某些SingletonBeanRegistry接口实现类实现也允许将那些非BeanFactory创建的、已有的用户对象注册到容器中，这些对象必须是共享的，
+	比如使用DefaultListableBeanFactory 的registerSingleton() 方法。不过建议采用元数据定义。
+
+Bean的命名:
+	每个Bean可以有一个或多个id（或称之为标识符或名字），在这里我们把第一个id称为“标识符”，其余id叫做“别名”；这些id在IoC容器中必须唯一。
+	指定id和name，id就是标识符，而name就是别名，必须在Ioc容器中唯一
+	使用<alias>标签指定别名，别名也必须在IoC容器中唯一
+	
+
+实例化Bean:
+	1.默认空构造器,<bean id="xxx" class="xxx">
+	2.有参数构造器:在bean内配置+<constructor-arg>
+	3.使用静态工厂方式实例化Bean,使用这种方式除了指定必须的class属性，还要指定factory-method属性来实例化Bean的方法，而且静态工厂方法也允许方法参数
+	  Spring Ioc将调用此属性指定的方法来获取Bean	
+    4.使用实例化方法实例化Bean,使用这种方式不能指定class属性,此时必须使用factory-bean属性来指定bean,factory属性指定实例化Bean方式,而且使用实例工厂
+                 允许指定方法参数,方式和使用构造器方式一样	  
+                 
+                 
+
+URL:http://jinnianshilongnian.iteye.com/blog/1415277                 
+IOC容器依赖:
+	Bean依赖容器 + 容器注入Bean的依赖资源
+	1. Bean依赖容器 ：   创建Bean并管理Bean的生命周期
+	2. 容器注入Bean的依赖资源：   Bean,外部文件,常量数据 
+
+	好处:
+	1.动态替换Bean依赖对象,程序更灵活
+	2.更好实践面向接口编程，代码更清晰
+	3.更好实践优先使用对象组合，而不是类继承
+	4.增减Bean可复用性
+	5.降低Bean之间耦合
+	
+	例子代码实现(xml的设置值):
+		A.构造器建立
+		B.set方法的设置值
+			普通参数
+			集合类型
+		
+	Spring循环依赖是无法解决,需要避免使用无环依赖	
+
+DI
+Bean属性:
+1.lazy-init(延迟初始化Bean):
+	延迟初始化也叫惰性初始化,并不提前初始化Bean,而是只有真正使用时才创建及初始化Bean
+	容器每个Bean只有一个实例
+	配置文件:lazy-init="true" 默认为false ioc容器进行初始化的时候就初始化Bean
+	
+2.depends-on:【只能是singleton作用销毁，prototype作用域不能】
+	具有此属性指定的Bean要先初始化完毕之后才初始化当前Bean
+	资源初始化与释放的问题:
+	<bean id="A" class="XXX">
+	<bean id="B" class="xxx" depends-on="A,C,....">
+	
+	初始化与销毁：
+		加载B类,先需要准备其依赖的A,C类资源,先加载A,C类的资源这些前奏的工作，然后再进行加载B类资源
+		销毁A,B,C类资源,先需要销毁B类资源,因为销毁A,C类资源,B类资源有可能会对A,C类资源的访问,会
+		造成资源的不释放与释放错误。故先销毁B类资源,然后再销毁A,C类资源
+	
+3.自动装配:
+	由sprng来自动注入依赖对象，无需人工参与,减少构造器注入和setter注入配置[我们之前写的class有对应的属性的时候，需要进行set方法的设定]
+	通过bean标签中的autowirte属性来改变自动装配方式,属性值如下:
+	1.default：默认装配
+		no,byName,byType,constructor
+		no:不支持自动装配
+		byName:根据名字来自动装配,只能用于setter注入
+		byType:根据类型注入,用于setter注入
+		
+		
+4.dependcy-check:	
+	依赖检查
+	none:默认方式,表示不检查
+	objects:检查除基本类型外的依赖对象
+	simple：对基本类型依赖检查
+	all:对所有类型进行依赖检查
+	
+5.scope:[spring的作用域]
+	single:在springioc容器存在一个实例,而且完整生命周期完全由spring管理
+		   spring缓存单例对象,Bean定义也是会缓存的，对于惰性初始化对象在首次使用时根据Bean定义创建并皴法单例缓存池
+	prototype:即原型，每次向spring请求都返回全新的Bean,不缓存Bean,根据Bean定义创建全新的Bean
+	【web应用中作用域】
+	request:标示每个请求需要容器创建一个全新的Bean
+	session:表示每个会话需要容器创建一个全新的Bean
+	globalSession:类似于session作用域，只是拥有portlet环境的web应用,如果在非portlet环境将视为session作用域
+	自定义作用域:...
+		
+
+
+资源:
+	1.ResourceLoader接口返回的是Resource对象,实际上生产Resource的工厂类
+	2.Application也实现了ResourceLoader,因此可以使用其来加载资源
+		ClassPathXmlApplication
+		FileSystemXmlApplication
+		WebApplicationCation
+		
+AOP:
+	面向切面编程，一种编程范式,提供从另外一个角度来考虑结构从而完善面向对象编程OOP
+	对应的业务:日志 事务处理 缓存 性能统计 权限控制
+	作用:	
+		用于横切关注点的分离和织如横切点到系统，比如日志 事务 缓存 权限
+		完善oop
+		降低组件和模块之间的耦合性
+		使系统容易扩展
+		而且由于关注点分离从而获得组件的复用	
+	连接点：需要在程序中插入横切关注点的扩展点
+	切入点:连接点的集合,Spring也是一个Bean,切入点可以被多个切面使用
+		<aop:pointcut id="" />
+		[需要实现Aspect通知方法的具体位置]
+		
+	通知:	
+	
+	切面:包含切入点和通知的对象,该支持Bean的字段和方法提供了切面状态和行为信息
+		<aop:aspect />
+		[整个切面内容的定义]
+	
+	
+	
+	
+	
+	
+		
+			
+		
+			
+		       
+	
